@@ -1,53 +1,51 @@
 import sys
+# This became really gross, but at least I did it differently.
+opener_list = ['(', '[', '{', '<', '(*']
+closer_list = [')', ']', '}', '>', '*)']
 
 
-def bracket_check(filename):
+def read_file(filename):
     with open(filename) as f:
-        text = [line for line in f]
-        print "some text"
-        print text
-        print "that was some text"
-    pairs = {
-        "(": ")",
-        "{": "}",      # matching keys,values to determine if a bracket is
-                       # complete or not
-        "<": ">",
-        "[": "]",
-        "(*": "*)"
-    }
-    opened_bracks = pairs.keys()  # get the opening brackets
-    closed_bracks = pairs.values()  # get the closing brackets
-    brackets = opened_bracks + closed_bracks
+        for string in f:
+            bracket_check(string.strip())
 
-    tokens = []
-    to_be_closed = []
 
-    for char in text:
-        token = text.pop(0)
-        if text and (token == "(" and text[0] == "*" or token == "*"
-                     and text[0] == ")"):
-            token += text.pop(0)
-
-        tokens.append(token)
-
-        if token not in brackets:
-            continue
-        if token in opened_bracks:
-            to_be_closed.append(token)
-        elif token in closed_bracks:
-            opened = to_be_closed[-1]
-            if token == pairs[opened]:
-                to_be_closed.pop()
+def bracket_check(string):
+    stack = []
+    for i, char in enumerate(string):
+        if char in opener_list:
+            double_token = string[i: i+2]
+            if double_token == "(*":
+                stack.append(double_token)
             else:
-                tokens.pop()
+                stack.append(char)
+        elif char in closer_list:
+            opener_index = closer_list.index(char)
+            opener_token = opener_list[opener_index]
+            cl_double_token = string[i-1: (i+1)]
+            cl_dbl_tkn_check = string[(i-2): (i)]
+            find_opener_ind = string[0:(i-1)]
+            if cl_double_token == "*)" and "(*" in find_opener_ind:
+                if cl_dbl_tkn_check != "(*" and double_token == "(*":
+                        stack.pop()
+            elif stack[-1] == opener_token:
+                stack.pop()
+            elif not stack or opener_token not in stack:
+                print ("No. Unbalanced. Closer with no previous opener.")
                 break
+            else:
+                pass
+    if stack or i < len(string)-1:
+        print("=============================================================")
+        print stack
+        print("No, it's unbalanced!")
+        print("=============================================================")
 
-    if not to_be_closed:
-        print("Yep")
-        return "YES"
     else:
-        print("Nope")
-        return "NO {}".format(len(tokens)+1)
+        print("=============================================================")
+        print stack
+        print("Yes! It's balanced!")
+        print("=============================================================")
 
 
 def main():
@@ -56,7 +54,7 @@ def main():
         sys.exit(1)
     filename = sys.argv[1]
     if filename:
-        bracket_check(filename)
+        read_file(filename)
 
 
 if __name__ == '__main__':
